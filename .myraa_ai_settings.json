@@ -1,0 +1,7 @@
+{
+  "geminiApiKey": "",
+  "grokApiKey": "",
+  "preferredProvider": "gemini",
+  "automaticFallback": true,
+  "updatedAt": "2026-09-12T12:17:41.839Z"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "MYRAA",
+  "description": "Real-time AI voice companion with continuous conversation, emotional presence, persistent memory, screen intelligence, and unified native phone call management for Chinna.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
