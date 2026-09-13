@@ -1,3 +1,4 @@
+import { apiUrl } from '../../../config/backendConfig';
 import { AIProvider } from './AIProvider';
 import { AIProviderType, AIRequest, AIResponse, ProviderTestResult, AISettings } from '../../../types';
 
@@ -25,7 +26,7 @@ export class GrokProvider implements AIProvider {
       apiKey: settings.grokApiKey,
     };
 
-    const res = await fetch('/api/companion/converse', {
+    const res = await fetch(apiUrl('/api/companion/converse'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -61,7 +62,7 @@ export class GrokProvider implements AIProvider {
     }
 
     try {
-      const res = await fetch('/api/ai/test', {
+      const res = await fetch(apiUrl('/api/ai/test'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

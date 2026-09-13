@@ -1,3 +1,4 @@
+import { apiUrl } from '../../config/backendConfig';
 import { AISettings, AIProviderType } from '../../types';
 
 const STORAGE_KEY = 'myraa_secure_ai_settings_v1';
@@ -162,7 +163,7 @@ class AISettingsStorage {
    */
   public async syncWithServer(): Promise<AISettings> {
     try {
-      const res = await fetch('/api/ai/settings');
+      const res = await fetch(apiUrl('/api/ai/settings'));
       if (res.ok) {
         const serverData = await res.json();
         const current = this.getSettings();
@@ -255,7 +256,7 @@ class AISettingsStorage {
    */
   private async pushToServer(settings: AISettings) {
     try {
-      await fetch('/api/ai/settings', {
+      await fetch(apiUrl('/api/ai/settings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -297,14 +298,14 @@ class AISettingsStorage {
         localStorage.removeItem(GEMINI_BACKUP_KEY);
         sessionStorage.removeItem(GEMINI_BACKUP_KEY);
       }
-      fetch('/api/ai/settings/key/gemini', { method: 'DELETE' }).catch(() => {});
+      fetch(apiUrl('/api/ai/settings/key/gemini'), { method: 'DELETE' }).catch(() => {});
       return this.saveSettings({ geminiApiKey: '' });
     } else {
       if (typeof window !== 'undefined') {
         localStorage.removeItem(GROK_BACKUP_KEY);
         sessionStorage.removeItem(GROK_BACKUP_KEY);
       }
-      fetch('/api/ai/settings/key/grok', { method: 'DELETE' }).catch(() => {});
+      fetch(apiUrl('/api/ai/settings/key/grok'), { method: 'DELETE' }).catch(() => {});
       return this.saveSettings({ grokApiKey: '' });
     }
   }

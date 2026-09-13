@@ -1,3 +1,4 @@
+import { apiUrl } from '../../config/backendConfig';
 import { ScreenUnderstandingResult } from '../../types';
 import { screenPrivacyManager } from './ScreenPrivacyManager';
 
@@ -36,7 +37,7 @@ export class GeminiVisionAdapter {
    */
   public async analyzeScreen(params: VisionAnalysisParams): Promise<VisionAnalysisResponse> {
     try {
-      const response = await fetch('/api/screen/analyze', {
+      const response = await fetch(apiUrl('/api/screen/analyze'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

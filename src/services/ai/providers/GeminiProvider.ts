@@ -1,3 +1,4 @@
+import { apiUrl } from '../../../config/backendConfig';
 import { AIProvider } from './AIProvider';
 import { AIProviderType, AIRequest, AIResponse, ProviderTestResult, AISettings } from '../../../types';
 
@@ -21,7 +22,7 @@ export class GeminiProvider implements AIProvider {
       apiKey: settings.geminiApiKey || undefined,
     };
 
-    const res = await fetch('/api/companion/converse', {
+    const res = await fetch(apiUrl('/api/companion/converse'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -48,7 +49,7 @@ export class GeminiProvider implements AIProvider {
   public async testConnection(apiKey?: string): Promise<ProviderTestResult> {
     const startTime = performance.now();
     try {
-      const res = await fetch('/api/ai/test', {
+      const res = await fetch(apiUrl('/api/ai/test'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

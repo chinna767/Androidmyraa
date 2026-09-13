@@ -9,6 +9,7 @@ import { toolManager } from './ToolManager';
 import { systemControlManager } from './SystemControlManager';
 import { screenIntelligenceManager } from './screen/ScreenIntelligenceManager';
 import { aiRouter } from './ai/AIRouter';
+import { liveWebSocketUrl } from '../config/backendConfig';
 
 export interface GeminiLiveServiceCallbacks {
   onStateChange: (state: CompanionState) => void;
@@ -129,8 +130,7 @@ export class GeminiLiveService {
       this.startActiveCommandRecognizer();
 
       // 4. Connect WebSocket to server with dynamic Chinna system instructions
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/live`;
+      const wsUrl = liveWebSocketUrl();
       this.log('info', 'WEBSOCKET', `Connecting to Live server: ${wsUrl}`);
       this.ws = new WebSocket(wsUrl);
 
