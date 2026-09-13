@@ -651,34 +651,90 @@ export class AudioEngine {
   /**
    * Schedule PCM audio chunk playback at 24kHz seamlessly
    */
-  public playAudioChunk(base64Pcm: string): void {
-    if (!this.outputContext || this.outputContext.state === 'closed') return;
+  public async playAudioChunk(base64Pcm: string): Promise<void> {
+    if (!this.outputContext || this.outputContext.state === 'closed') {
+      console.warn('[MYRAA AUDIO] Output AudioContext is unavailable');
+      return;
+    }
+
     try {
-      if (this.outputContext.state === 'suspended') {
-        this.outputContext.resume();
+      // Android WebView may suspend AudioContext.
+      // Wait until it is actually running before playback.
+      if (this.outputContext.state !== 'running') {
+        console.log(
+          '[MYRAA AUDIO] Resuming output context. Current state:',
+          this.outputContext.state
+        );
+
+        await this.outputContext.resume();
+
+        console.log(
+          '[MYRAA AUDIO] Output context after resume:',
+          this.outputContext.state
+        );
       }
+
+      if (this.outputContext.state !== 'running') {
+        console.warn(
+          '[MYRAA AUDIO] Output context did not enter running state'
+        );
+        return;
+      }
+
+      if (!this.outputGainNode) {
+        console.error('[MYRAA AUDIO] Output gain node is not initialized');
+        return;
+      }
+
+      console.log(
+        '[MYRAA AUDIO] Received PCM chunk. Base64 length:',
+        base64Pcm.length
+      );
+
       const floatData = this.base64ToFloat32(base64Pcm);
-      if (floatData.length === 0) return;
+
+      if (floatData.length === 0) {
+        console.warn('[MYRAA AUDIO] Empty PCM audio chunk');
+        return;
+      }
+
+      console.log(
+        '[MYRAA AUDIO] Decoded PCM samples:',
+        floatData.length,
+        'Sample rate:',
+        COMPANION_CONFIG.outputSampleRate
+      );
 
       const audioBuffer = this.outputContext.createBuffer(
         1,
         floatData.length,
         COMPANION_CONFIG.outputSampleRate
       );
+
       audioBuffer.getChannelData(0).set(floatData);
 
       const source = this.outputContext.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(this.outputGainNode!);
+
+      source.connect(this.outputGainNode);
 
       const now = this.outputContext.currentTime;
+
       if (this.nextStartTime < now) {
-        this.nextStartTime = now + 0.012; // 12ms jitter buffer
+        this.nextStartTime = now + 0.012;
       }
+
       source.start(this.nextStartTime);
+
+      console.log(
+        '[MYRAA AUDIO] Playback started. Duration:',
+        audioBuffer.duration
+      );
+
       this.nextStartTime += audioBuffer.duration;
 
       this.activeSources.push(source);
+
       if (!this.isPlayingAudio) {
         this.isPlayingAudio = true;
         this.callbacks.onPlaybackStateChange(true);
@@ -686,16 +742,22 @@ export class AudioEngine {
 
       source.onended = () => {
         const index = this.activeSources.indexOf(source);
+
         if (index > -1) {
           this.activeSources.splice(index, 1);
         }
+
         if (this.activeSources.length === 0) {
           this.isPlayingAudio = false;
           this.callbacks.onPlaybackStateChange(false);
         }
       };
+
     } catch (err) {
-      console.error('[AudioEngine] Error playing audio chunk:', err);
+      console.error(
+        '[MYRAA AUDIO] Error playing audio chunk:',
+        err
+      );
     }
   }
 
