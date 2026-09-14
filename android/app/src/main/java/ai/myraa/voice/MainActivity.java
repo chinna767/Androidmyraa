@@ -12,9 +12,13 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
 
     private static final int MICROPHONE_PERMISSION_CODE = 1001;
+    private static final int CAMERA_PERMISSION_CODE = 1002;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
+        registerPlugin(MyraaDevicePlugin.class);
+
         super.onCreate(savedInstanceState);
 
         if (ContextCompat.checkSelfPermission(
@@ -24,8 +28,24 @@ public class MainActivity extends BridgeActivity {
 
             ActivityCompat.requestPermissions(
                     this,
-                    new String[]{Manifest.permission.RECORD_AUDIO},
+                    new String[]{
+                            Manifest.permission.RECORD_AUDIO
+                    },
                     MICROPHONE_PERMISSION_CODE
+            );
+        }
+
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+        ) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            Manifest.permission.CAMERA
+                    },
+                    CAMERA_PERMISSION_CODE
             );
         }
     }

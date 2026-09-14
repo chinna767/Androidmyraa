@@ -150,209 +150,69 @@ export class SystemControlManager {
   // 1. VOLUME CONTROL
   // =========================================================================
 
-  public async volume_up(
-    step: number = 15
-  ): Promise<SystemControlResult> {
-
+  public volume_up(step: number = 15): SystemControlResult {
     const start = performance.now();
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const result =
-        await MyraaDevice.increaseVolume(step);
-
-      if (result.success) {
-
-        this.currentVolume = result.volume;
-        this.isMutedState = result.volume === 0;
-
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'volume_up',
-          current_state: this.currentVolume,
-          message: `Phone volume set to ${this.currentVolume}%`,
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-    }
-
-    // Browser fallback
-
-    const newVolume =
-      Math.min(100, this.currentVolume + step);
-
+    const newVolume = Math.min(100, this.currentVolume + step);
     this.isMutedState = false;
-
-    return this.applyVolume(
-      newVolume,
-      'volume_up',
-      start
-    );
+    return this.applyVolume(newVolume, 'volume_up', start);
   }
 
-
-  public async volume_down(
-    step: number = 15
-  ): Promise<SystemControlResult> {
-
+  public volume_down(step: number = 15): SystemControlResult {
     const start = performance.now();
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const result =
-        await MyraaDevice.decreaseVolume(step);
-
-      if (result.success) {
-
-        this.currentVolume = result.volume;
-        this.isMutedState = result.volume === 0;
-
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'volume_down',
-          current_state: this.currentVolume,
-          message: `Phone volume set to ${this.currentVolume}%`,
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-    }
-
-    // Browser fallback
-
-    const newVolume =
-      Math.max(0, this.currentVolume - step);
-
-    return this.applyVolume(
-      newVolume,
-      'volume_down',
-      start
-    );
+    const newVolume = Math.max(0, this.currentVolume - step);
+    return this.applyVolume(newVolume, 'volume_down', start);
   }
 
-
-  public async set_volume(
-    level: number
-  ): Promise<SystemControlResult> {
-
+  public set_volume(level: number): SystemControlResult {
     const start = performance.now();
-
-    const target =
-      Math.max(
-        0,
-        Math.min(100, Math.round(level))
-      );
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const result =
-        await MyraaDevice.setVolume(target);
-
-      if (result.success) {
-
-        this.currentVolume = result.volume;
-        this.isMutedState =
-          result.volume === 0;
-
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'set_volume',
-          current_state: this.currentVolume,
-          message:
-            `Phone volume set to ${this.currentVolume}%`,
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-    }
-
-    // Browser fallback
-
+    const target = Math.max(0, Math.min(100, Math.round(level)));
     this.isMutedState = target === 0;
-
-    return this.applyVolume(
-      target,
-      'set_volume',
-      start
-    );
+    return this.applyVolume(target, 'set_volume', start);
   }
-
 
   public mute(): SystemControlResult {
-
     const start = performance.now();
-
     this.isMutedState = true;
-
     if (this.externalGainSetter) {
       this.externalGainSetter(0);
     }
-
     this.notifyStateChange();
-
     return {
       success: true,
       action: 'mute',
       current_state: 0,
       message: 'Volume muted.',
-      executionTimeMs:
-        Math.round(performance.now() - start),
+      executionTimeMs: Math.round(performance.now() - start),
     };
   }
 
-
   public unmute(): SystemControlResult {
-
     const start = performance.now();
-
     this.isMutedState = false;
-
-    const gain =
-      this.currentVolume / 100;
-
+    const gain = this.currentVolume / 100;
     if (this.externalGainSetter) {
       this.externalGainSetter(gain);
     }
-
     this.notifyStateChange();
-
     return {
       success: true,
       action: 'unmute',
       current_state: this.currentVolume,
-      message:
-        `Volume unmuted to ${this.currentVolume}%.`,
-      executionTimeMs:
-        Math.round(performance.now() - start),
+      message: `Volume unmuted to ${this.currentVolume}%.`,
+      executionTimeMs: Math.round(performance.now() - start),
     };
   }
 
-
   public toggleMute(): SystemControlResult {
-
     if (this.isMutedState) {
       return this.unmute();
+    } else {
+      return this.mute();
     }
-
-    return this.mute();
   }
 
-
-  private applyVolume(
-    target: number,
-    actionName: string,
-    start: number
-  ): SystemControlResult {
-
+  private applyVolume(target: number, actionName: string, start: number): SystemControlResult {
     this.currentVolume = target;
-
     const gain = target / 100;
 
     if (this.externalGainSetter) {
@@ -360,307 +220,68 @@ export class SystemControlManager {
     }
 
     if (typeof document !== 'undefined') {
-
-      const mediaElements =
-        document.querySelectorAll<HTMLMediaElement>(
-          'audio, video'
-        );
-
+      const mediaElements = document.querySelectorAll<HTMLMediaElement>('audio, video');
       mediaElements.forEach((el) => {
-
         try {
-          el.volume =
-            Math.max(
-              0,
-              Math.min(1, gain)
-            );
+          el.volume = Math.max(0, Math.min(1, gain));
         } catch (e) {}
-
       });
     }
 
     this.notifyStateChange();
-
     return {
       success: true,
       action: actionName,
       current_state: this.currentVolume,
-      message:
-        `Volume set to ${this.currentVolume}%`,
-      executionTimeMs:
-        Math.round(performance.now() - start),
+      message: `Volume set to ${this.currentVolume}%`,
+      executionTimeMs: Math.round(performance.now() - start),
     };
   }
 
-
   // =========================================================================
-  // 2. SYSTEM BRIGHTNESS CONTROL
+  // 2. BRIGHTNESS CONTROL
   // =========================================================================
 
-  public async brightness_up(
-    step: number = 15
-  ): Promise<SystemControlResult> {
-
+  public brightness_up(step: number = 15): SystemControlResult {
     const start = performance.now();
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const current =
-        await MyraaDevice.getSystemBrightness();
-
-      if (current.success &&
-          typeof current.brightness === 'number') {
-
-        const target =
-          Math.min(
-            100,
-            current.brightness + step
-          );
-
-        const result =
-          await MyraaDevice
-            .setSystemBrightness(target);
-
-        if (result.success) {
-
-          this.currentBrightness = target;
-
-          this.notifyStateChange();
-
-          return {
-            success: true,
-            action: 'brightness_up',
-            current_state: target,
-            message:
-              `System brightness set to ${target}%`,
-            executionTimeMs:
-              Math.round(performance.now() - start),
-          };
-        }
-
-        if (result.permissionRequired) {
-
-          return {
-            success: false,
-            action: 'brightness_up',
-            current_state: this.currentBrightness,
-            message:
-              'MYRAA needs permission to modify system settings.',
-            error:
-              'WRITE_SETTINGS_PERMISSION_REQUIRED',
-            executionTimeMs:
-              Math.round(performance.now() - start),
-          };
-        }
-      }
-    }
-
-    // Browser fallback
-
-    const newBrightness =
-      Math.min(
-        100,
-        this.currentBrightness + step
-      );
-
-    return this.applyBrightness(
-      newBrightness,
-      'brightness_up',
-      start
-    );
+    const newBrightness = Math.min(100, this.currentBrightness + step);
+    return this.applyBrightness(newBrightness, 'brightness_up', start);
   }
 
-
-  public async brightness_down(
-    step: number = 15
-  ): Promise<SystemControlResult> {
-
+  public brightness_down(step: number = 15): SystemControlResult {
     const start = performance.now();
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const current =
-        await MyraaDevice.getSystemBrightness();
-
-      if (current.success &&
-          typeof current.brightness === 'number') {
-
-        const target =
-          Math.max(
-            1,
-            current.brightness - step
-          );
-
-        const result =
-          await MyraaDevice
-            .setSystemBrightness(target);
-
-        if (result.success) {
-
-          this.currentBrightness = target;
-
-          this.notifyStateChange();
-
-          return {
-            success: true,
-            action: 'brightness_down',
-            current_state: target,
-            message:
-              `System brightness set to ${target}%`,
-            executionTimeMs:
-              Math.round(performance.now() - start),
-          };
-        }
-
-        if (result.permissionRequired) {
-
-          return {
-            success: false,
-            action: 'brightness_down',
-            current_state: this.currentBrightness,
-            message:
-              'MYRAA needs permission to modify system settings.',
-            error:
-              'WRITE_SETTINGS_PERMISSION_REQUIRED',
-            executionTimeMs:
-              Math.round(performance.now() - start),
-          };
-        }
-      }
-    }
-
-    // Browser fallback
-
-    const newBrightness =
-      Math.max(
-        15,
-        this.currentBrightness - step
-      );
-
-    return this.applyBrightness(
-      newBrightness,
-      'brightness_down',
-      start
-    );
+    const newBrightness = Math.max(15, this.currentBrightness - step);
+    return this.applyBrightness(newBrightness, 'brightness_down', start);
   }
 
-
-  public async set_brightness(
-    level: number
-  ): Promise<SystemControlResult> {
-
+  public set_brightness(level: number): SystemControlResult {
     const start = performance.now();
-
-    const target =
-      Math.max(
-        1,
-        Math.min(100, Math.round(level))
-      );
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const permission =
-        await MyraaDevice
-          .canWriteSystemSettings();
-
-      if (!permission.allowed) {
-
-        return {
-          success: false,
-          action: 'set_brightness',
-          current_state: this.currentBrightness,
-          message:
-            'MYRAA needs permission to modify system brightness.',
-          error:
-            'WRITE_SETTINGS_PERMISSION_REQUIRED',
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-
-      const result =
-        await MyraaDevice
-          .setSystemBrightness(target);
-
-      if (result.success) {
-
-        this.currentBrightness = target;
-
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'set_brightness',
-          current_state: target,
-          message:
-            `System brightness set to ${target}%`,
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-    }
-
-    // Browser fallback
-
-    return this.applyBrightness(
-      target,
-      'set_brightness',
-      start
-    );
+    const target = Math.max(10, Math.min(100, Math.round(level)));
+    return this.applyBrightness(target, 'set_brightness', start);
   }
 
-
-  private applyBrightness(
-    target: number,
-    actionName: string,
-    start: number
-  ): SystemControlResult {
-
+  private applyBrightness(target: number, actionName: string, start: number): SystemControlResult {
     this.currentBrightness = target;
-
     this.applyBrightnessToDOM(target);
-
     this.notifyStateChange();
-
     return {
       success: true,
       action: actionName,
       current_state: this.currentBrightness,
-      message:
-        `Screen brightness set to ${this.currentBrightness}%`,
-      executionTimeMs:
-        Math.round(performance.now() - start),
+      message: `Screen brightness set to ${this.currentBrightness}%`,
+      executionTimeMs: Math.round(performance.now() - start),
     };
   }
 
-
-  private applyBrightnessToDOM(
-    brightnessPercent: number
-  ): void {
-
+  private applyBrightnessToDOM(brightnessPercent: number): void {
     if (typeof document === 'undefined') return;
+    const factor = brightnessPercent / 100;
+    document.documentElement.style.setProperty('--screen-brightness', factor.toString());
 
-    const factor =
-      brightnessPercent / 100;
-
-    document.documentElement.style.setProperty(
-      '--screen-brightness',
-      factor.toString()
-    );
-
-    let overlay =
-      document.getElementById(
-        'myraa-brightness-overlay'
-      );
-
+    let overlay = document.getElementById('myraa-brightness-overlay');
     if (!overlay) {
-
-      overlay =
-        document.createElement('div');
-
-      overlay.id =
-        'myraa-brightness-overlay';
-
+      overlay = document.createElement('div');
+      overlay.id = 'myraa-brightness-overlay';
       overlay.style.position = 'fixed';
       overlay.style.top = '0';
       overlay.style.left = '0';
@@ -668,31 +289,19 @@ export class SystemControlManager {
       overlay.style.height = '100vh';
       overlay.style.pointerEvents = 'none';
       overlay.style.zIndex = '99999';
-      overlay.style.transition =
-        'background-color 0.3s ease';
-
+      overlay.style.transition = 'background-color 0.3s ease';
       document.body.appendChild(overlay);
     }
-
     if (brightnessPercent < 100) {
-
-      const dimOpacity =
-        (1 - factor) * 0.75;
-
-      overlay.style.backgroundColor =
-        `rgba(0, 0, 0, ${dimOpacity.toFixed(2)})`;
-
+      const dimOpacity = (1 - factor) * 0.75;
+      overlay.style.backgroundColor = `rgba(0, 0, 0, ${dimOpacity.toFixed(2)})`;
     } else {
-
-      overlay.style.backgroundColor =
-        'rgba(0, 0, 0, 0)';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0)';
     }
   }
 
-
   // =========================================================================
   // 3. TORCH / FLASHLIGHT
-
   // =========================================================================
 
   public async torch_on(): Promise<SystemControlResult> {

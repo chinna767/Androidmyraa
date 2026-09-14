@@ -386,22 +386,22 @@ export class ToolManager {
     try {
       switch (toolName) {
         case 'volume_up':
-          result = systemControlManager.volume_up(args.step || 15);
+          result = await systemControlManager.volume_up(args.step || 15);
           break;
         case 'volume_down':
-          result = systemControlManager.volume_down(args.step || 15);
+          result = await systemControlManager.volume_down(args.step || 15);
           break;
         case 'set_volume':
-          result = systemControlManager.set_volume(typeof args.level === 'number' ? args.level : 50);
+          result = await systemControlManager.set_volume(typeof args.level === 'number' ? args.level : 50);
           break;
         case 'brightness_up':
-          result = systemControlManager.brightness_up(args.step || 15);
+          result = await systemControlManager.brightness_up(args.step || 15);
           break;
         case 'brightness_down':
-          result = systemControlManager.brightness_down(args.step || 15);
+          result = await systemControlManager.brightness_down(args.step || 15);
           break;
         case 'set_brightness':
-          result = systemControlManager.set_brightness(typeof args.level === 'number' ? args.level : 70);
+          result = await systemControlManager.set_brightness(typeof args.level === 'number' ? args.level : 70);
           break;
         case 'torch_on':
           result = await systemControlManager.torch_on();

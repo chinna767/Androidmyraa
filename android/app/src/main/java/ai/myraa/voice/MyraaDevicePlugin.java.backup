@@ -1,0 +1,147 @@
+package ai.myraa.voice;
+
+import android.content.Context;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.PluginMethod;
+
+@CapacitorPlugin(name = "MyraaDevice")
+public class MyraaDevicePlugin extends Plugin {
+
+    private CameraManager cameraManager;
+    private String torchCameraId = null;
+    private boolean torchEnabled = false;
+
+    @Override
+    public void load() {
+        cameraManager = (CameraManager)
+                getContext().getSystemService(Context.CAMERA_SERVICE);
+
+        findTorchCamera();
+    }
+
+    private void findTorchCamera() {
+        try {
+            for (String cameraId : cameraManager.getCameraIdList()) {
+
+                CameraCharacteristics characteristics =
+                        cameraManager.getCameraCharacteristics(cameraId);
+
+                Boolean flashAvailable =
+                        characteristics.get(
+                                CameraCharacteristics.FLASH_INFO_AVAILABLE
+                        );
+
+                Integer lensFacing =
+                        characteristics.get(
+                                CameraCharacteristics.LENS_FACING
+                        );
+
+                if (Boolean.TRUE.equals(flashAvailable)
+                        && lensFacing != null
+                        && lensFacing ==
+                        CameraCharacteristics.LENS_FACING_BACK) {
+
+                    torchCameraId = cameraId;
+                    return;
+                }
+            }
+
+        } catch (Exception e) {
+            android.util.Log.e(
+                    "MYRAA_DEVICE",
+                    "Torch camera detection failed",
+                    e
+            );
+        }
+    }
+
+    private boolean setTorch(boolean enabled) {
+
+        try {
+
+            if (torchCameraId == null) {
+                findTorchCamera();
+            }
+
+            if (torchCameraId == null) {
+                return false;
+            }
+
+            cameraManager.setTorchMode(
+                    torchCameraId,
+                    enabled
+            );
+
+            torchEnabled = enabled;
+
+            return true;
+
+        } catch (Exception e) {
+
+            android.util.Log.e(
+                    "MYRAA_DEVICE",
+                    "Torch operation failed",
+                    e
+            );
+
+            return false;
+        }
+    }
+
+    @PluginMethod
+    public void turnTorchOn(PluginCall call) {
+
+        boolean success = setTorch(true);
+
+        call.resolve(
+                new com.getcapacitor.JSObject() {{
+                    put("success", success);
+                    put("enabled", success);
+                }}
+        );
+    }
+
+    @PluginMethod
+    public void turnTorchOff(PluginCall call) {
+
+        boolean success = setTorch(false);
+
+        call.resolve(
+                new com.getcapacitor.JSObject() {{
+                    put("success", success);
+                    put("enabled", false);
+                }}
+        );
+    }
+
+    @PluginMethod
+    public void toggleTorch(PluginCall call) {
+
+        boolean newState = !torchEnabled;
+        boolean success = setTorch(newState);
+
+        call.resolve(
+                new com.getcapacitor.JSObject() {{
+                    put("success", success);
+                    put("enabled", success && newState);
+                }}
+        );
+    }
+
+    @PluginMethod
+    public void getTorchStatus(PluginCall call) {
+
+        com.getcapacitor.JSObject result =
+                new com.getcapacitor.JSObject();
+
+        result.put("available", torchCameraId != null);
+        result.put("enabled", torchEnabled);
+
+        call.resolve(result);
+    }
+}

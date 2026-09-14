@@ -150,209 +150,69 @@ export class SystemControlManager {
   // 1. VOLUME CONTROL
   // =========================================================================
 
-  public async volume_up(
-    step: number = 15
-  ): Promise<SystemControlResult> {
-
+  public volume_up(step: number = 15): SystemControlResult {
     const start = performance.now();
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const result =
-        await MyraaDevice.increaseVolume(step);
-
-      if (result.success) {
-
-        this.currentVolume = result.volume;
-        this.isMutedState = result.volume === 0;
-
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'volume_up',
-          current_state: this.currentVolume,
-          message: `Phone volume set to ${this.currentVolume}%`,
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-    }
-
-    // Browser fallback
-
-    const newVolume =
-      Math.min(100, this.currentVolume + step);
-
+    const newVolume = Math.min(100, this.currentVolume + step);
     this.isMutedState = false;
-
-    return this.applyVolume(
-      newVolume,
-      'volume_up',
-      start
-    );
+    return this.applyVolume(newVolume, 'volume_up', start);
   }
 
-
-  public async volume_down(
-    step: number = 15
-  ): Promise<SystemControlResult> {
-
+  public volume_down(step: number = 15): SystemControlResult {
     const start = performance.now();
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const result =
-        await MyraaDevice.decreaseVolume(step);
-
-      if (result.success) {
-
-        this.currentVolume = result.volume;
-        this.isMutedState = result.volume === 0;
-
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'volume_down',
-          current_state: this.currentVolume,
-          message: `Phone volume set to ${this.currentVolume}%`,
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-    }
-
-    // Browser fallback
-
-    const newVolume =
-      Math.max(0, this.currentVolume - step);
-
-    return this.applyVolume(
-      newVolume,
-      'volume_down',
-      start
-    );
+    const newVolume = Math.max(0, this.currentVolume - step);
+    return this.applyVolume(newVolume, 'volume_down', start);
   }
 
-
-  public async set_volume(
-    level: number
-  ): Promise<SystemControlResult> {
-
+  public set_volume(level: number): SystemControlResult {
     const start = performance.now();
-
-    const target =
-      Math.max(
-        0,
-        Math.min(100, Math.round(level))
-      );
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const result =
-        await MyraaDevice.setVolume(target);
-
-      if (result.success) {
-
-        this.currentVolume = result.volume;
-        this.isMutedState =
-          result.volume === 0;
-
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'set_volume',
-          current_state: this.currentVolume,
-          message:
-            `Phone volume set to ${this.currentVolume}%`,
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-    }
-
-    // Browser fallback
-
+    const target = Math.max(0, Math.min(100, Math.round(level)));
     this.isMutedState = target === 0;
-
-    return this.applyVolume(
-      target,
-      'set_volume',
-      start
-    );
+    return this.applyVolume(target, 'set_volume', start);
   }
-
 
   public mute(): SystemControlResult {
-
     const start = performance.now();
-
     this.isMutedState = true;
-
     if (this.externalGainSetter) {
       this.externalGainSetter(0);
     }
-
     this.notifyStateChange();
-
     return {
       success: true,
       action: 'mute',
       current_state: 0,
       message: 'Volume muted.',
-      executionTimeMs:
-        Math.round(performance.now() - start),
+      executionTimeMs: Math.round(performance.now() - start),
     };
   }
 
-
   public unmute(): SystemControlResult {
-
     const start = performance.now();
-
     this.isMutedState = false;
-
-    const gain =
-      this.currentVolume / 100;
-
+    const gain = this.currentVolume / 100;
     if (this.externalGainSetter) {
       this.externalGainSetter(gain);
     }
-
     this.notifyStateChange();
-
     return {
       success: true,
       action: 'unmute',
       current_state: this.currentVolume,
-      message:
-        `Volume unmuted to ${this.currentVolume}%.`,
-      executionTimeMs:
-        Math.round(performance.now() - start),
+      message: `Volume unmuted to ${this.currentVolume}%.`,
+      executionTimeMs: Math.round(performance.now() - start),
     };
   }
 
-
   public toggleMute(): SystemControlResult {
-
     if (this.isMutedState) {
       return this.unmute();
+    } else {
+      return this.mute();
     }
-
-    return this.mute();
   }
 
-
-  private applyVolume(
-    target: number,
-    actionName: string,
-    start: number
-  ): SystemControlResult {
-
+  private applyVolume(target: number, actionName: string, start: number): SystemControlResult {
     this.currentVolume = target;
-
     const gain = target / 100;
 
     if (this.externalGainSetter) {
@@ -360,307 +220,68 @@ export class SystemControlManager {
     }
 
     if (typeof document !== 'undefined') {
-
-      const mediaElements =
-        document.querySelectorAll<HTMLMediaElement>(
-          'audio, video'
-        );
-
+      const mediaElements = document.querySelectorAll<HTMLMediaElement>('audio, video');
       mediaElements.forEach((el) => {
-
         try {
-          el.volume =
-            Math.max(
-              0,
-              Math.min(1, gain)
-            );
+          el.volume = Math.max(0, Math.min(1, gain));
         } catch (e) {}
-
       });
     }
 
     this.notifyStateChange();
-
     return {
       success: true,
       action: actionName,
       current_state: this.currentVolume,
-      message:
-        `Volume set to ${this.currentVolume}%`,
-      executionTimeMs:
-        Math.round(performance.now() - start),
+      message: `Volume set to ${this.currentVolume}%`,
+      executionTimeMs: Math.round(performance.now() - start),
     };
   }
 
-
   // =========================================================================
-  // 2. SYSTEM BRIGHTNESS CONTROL
+  // 2. BRIGHTNESS CONTROL
   // =========================================================================
 
-  public async brightness_up(
-    step: number = 15
-  ): Promise<SystemControlResult> {
-
+  public brightness_up(step: number = 15): SystemControlResult {
     const start = performance.now();
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const current =
-        await MyraaDevice.getSystemBrightness();
-
-      if (current.success &&
-          typeof current.brightness === 'number') {
-
-        const target =
-          Math.min(
-            100,
-            current.brightness + step
-          );
-
-        const result =
-          await MyraaDevice
-            .setSystemBrightness(target);
-
-        if (result.success) {
-
-          this.currentBrightness = target;
-
-          this.notifyStateChange();
-
-          return {
-            success: true,
-            action: 'brightness_up',
-            current_state: target,
-            message:
-              `System brightness set to ${target}%`,
-            executionTimeMs:
-              Math.round(performance.now() - start),
-          };
-        }
-
-        if (result.permissionRequired) {
-
-          return {
-            success: false,
-            action: 'brightness_up',
-            current_state: this.currentBrightness,
-            message:
-              'MYRAA needs permission to modify system settings.',
-            error:
-              'WRITE_SETTINGS_PERMISSION_REQUIRED',
-            executionTimeMs:
-              Math.round(performance.now() - start),
-          };
-        }
-      }
-    }
-
-    // Browser fallback
-
-    const newBrightness =
-      Math.min(
-        100,
-        this.currentBrightness + step
-      );
-
-    return this.applyBrightness(
-      newBrightness,
-      'brightness_up',
-      start
-    );
+    const newBrightness = Math.min(100, this.currentBrightness + step);
+    return this.applyBrightness(newBrightness, 'brightness_up', start);
   }
 
-
-  public async brightness_down(
-    step: number = 15
-  ): Promise<SystemControlResult> {
-
+  public brightness_down(step: number = 15): SystemControlResult {
     const start = performance.now();
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const current =
-        await MyraaDevice.getSystemBrightness();
-
-      if (current.success &&
-          typeof current.brightness === 'number') {
-
-        const target =
-          Math.max(
-            1,
-            current.brightness - step
-          );
-
-        const result =
-          await MyraaDevice
-            .setSystemBrightness(target);
-
-        if (result.success) {
-
-          this.currentBrightness = target;
-
-          this.notifyStateChange();
-
-          return {
-            success: true,
-            action: 'brightness_down',
-            current_state: target,
-            message:
-              `System brightness set to ${target}%`,
-            executionTimeMs:
-              Math.round(performance.now() - start),
-          };
-        }
-
-        if (result.permissionRequired) {
-
-          return {
-            success: false,
-            action: 'brightness_down',
-            current_state: this.currentBrightness,
-            message:
-              'MYRAA needs permission to modify system settings.',
-            error:
-              'WRITE_SETTINGS_PERMISSION_REQUIRED',
-            executionTimeMs:
-              Math.round(performance.now() - start),
-          };
-        }
-      }
-    }
-
-    // Browser fallback
-
-    const newBrightness =
-      Math.max(
-        15,
-        this.currentBrightness - step
-      );
-
-    return this.applyBrightness(
-      newBrightness,
-      'brightness_down',
-      start
-    );
+    const newBrightness = Math.max(15, this.currentBrightness - step);
+    return this.applyBrightness(newBrightness, 'brightness_down', start);
   }
 
-
-  public async set_brightness(
-    level: number
-  ): Promise<SystemControlResult> {
-
+  public set_brightness(level: number): SystemControlResult {
     const start = performance.now();
-
-    const target =
-      Math.max(
-        1,
-        Math.min(100, Math.round(level))
-      );
-
-    if (MyraaDevice.isNativeAndroid()) {
-
-      const permission =
-        await MyraaDevice
-          .canWriteSystemSettings();
-
-      if (!permission.allowed) {
-
-        return {
-          success: false,
-          action: 'set_brightness',
-          current_state: this.currentBrightness,
-          message:
-            'MYRAA needs permission to modify system brightness.',
-          error:
-            'WRITE_SETTINGS_PERMISSION_REQUIRED',
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-
-      const result =
-        await MyraaDevice
-          .setSystemBrightness(target);
-
-      if (result.success) {
-
-        this.currentBrightness = target;
-
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'set_brightness',
-          current_state: target,
-          message:
-            `System brightness set to ${target}%`,
-          executionTimeMs:
-            Math.round(performance.now() - start),
-        };
-      }
-    }
-
-    // Browser fallback
-
-    return this.applyBrightness(
-      target,
-      'set_brightness',
-      start
-    );
+    const target = Math.max(10, Math.min(100, Math.round(level)));
+    return this.applyBrightness(target, 'set_brightness', start);
   }
 
-
-  private applyBrightness(
-    target: number,
-    actionName: string,
-    start: number
-  ): SystemControlResult {
-
+  private applyBrightness(target: number, actionName: string, start: number): SystemControlResult {
     this.currentBrightness = target;
-
     this.applyBrightnessToDOM(target);
-
     this.notifyStateChange();
-
     return {
       success: true,
       action: actionName,
       current_state: this.currentBrightness,
-      message:
-        `Screen brightness set to ${this.currentBrightness}%`,
-      executionTimeMs:
-        Math.round(performance.now() - start),
+      message: `Screen brightness set to ${this.currentBrightness}%`,
+      executionTimeMs: Math.round(performance.now() - start),
     };
   }
 
-
-  private applyBrightnessToDOM(
-    brightnessPercent: number
-  ): void {
-
+  private applyBrightnessToDOM(brightnessPercent: number): void {
     if (typeof document === 'undefined') return;
+    const factor = brightnessPercent / 100;
+    document.documentElement.style.setProperty('--screen-brightness', factor.toString());
 
-    const factor =
-      brightnessPercent / 100;
-
-    document.documentElement.style.setProperty(
-      '--screen-brightness',
-      factor.toString()
-    );
-
-    let overlay =
-      document.getElementById(
-        'myraa-brightness-overlay'
-      );
-
+    let overlay = document.getElementById('myraa-brightness-overlay');
     if (!overlay) {
-
-      overlay =
-        document.createElement('div');
-
-      overlay.id =
-        'myraa-brightness-overlay';
-
+      overlay = document.createElement('div');
+      overlay.id = 'myraa-brightness-overlay';
       overlay.style.position = 'fixed';
       overlay.style.top = '0';
       overlay.style.left = '0';
@@ -668,64 +289,23 @@ export class SystemControlManager {
       overlay.style.height = '100vh';
       overlay.style.pointerEvents = 'none';
       overlay.style.zIndex = '99999';
-      overlay.style.transition =
-        'background-color 0.3s ease';
-
+      overlay.style.transition = 'background-color 0.3s ease';
       document.body.appendChild(overlay);
     }
-
     if (brightnessPercent < 100) {
-
-      const dimOpacity =
-        (1 - factor) * 0.75;
-
-      overlay.style.backgroundColor =
-        `rgba(0, 0, 0, ${dimOpacity.toFixed(2)})`;
-
+      const dimOpacity = (1 - factor) * 0.75;
+      overlay.style.backgroundColor = `rgba(0, 0, 0, ${dimOpacity.toFixed(2)})`;
     } else {
-
-      overlay.style.backgroundColor =
-        'rgba(0, 0, 0, 0)';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0)';
     }
   }
 
-
   // =========================================================================
   // 3. TORCH / FLASHLIGHT
-
   // =========================================================================
 
   public async torch_on(): Promise<SystemControlResult> {
     const start = performance.now();
-
-    // REAL native Android flashlight
-    if (MyraaDevice.isNativeAndroid()) {
-      const result = await MyraaDevice.turnTorchOn();
-
-      if (result.success) {
-        this.isTorchActive = result.enabled;
-        this.notifyStateChange();
-
-        return {
-          success: true,
-          action: 'torch_on',
-          current_state: result.enabled,
-          message: 'Torch turned on successfully.',
-          executionTimeMs: Math.round(performance.now() - start),
-        };
-      }
-
-      return {
-        success: false,
-        action: 'torch_on',
-        current_state: false,
-        message: 'Could not turn on the Android flashlight.',
-        error: 'NATIVE_TORCH_FAILED',
-        executionTimeMs: Math.round(performance.now() - start),
-      };
-    }
-
-    // Browser / Render fallback
     if (this.isTorchActive) {
       return {
         success: true,
@@ -736,11 +316,7 @@ export class SystemControlManager {
       };
     }
 
-    if (
-      typeof navigator === 'undefined' ||
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ) {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       return {
         success: false,
         action: 'torch_on',
@@ -753,109 +329,57 @@ export class SystemControlManager {
     }
 
     try {
-      this.torchMediaStream =
-        await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' },
-            advanced: [{ torch: true } as any],
-          } as any,
-        });
-
-      const track =
-        this.torchMediaStream.getVideoTracks()[0];
-
+      this.torchMediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          advanced: [{ torch: true } as any],
+        } as any,
+      });
+      const track = this.torchMediaStream.getVideoTracks()[0];
       if (!track) {
         throw new Error('No camera track available');
       }
-
       this.torchTrack = track;
-
-      const capabilities: any =
-        track.getCapabilities
-          ? track.getCapabilities()
-          : {};
-
+      const capabilities: any = track.getCapabilities ? track.getCapabilities() : {};
       if (capabilities.torch) {
         await (track as any).applyConstraints({
           advanced: [{ torch: true }],
         });
-
         this.isTorchActive = true;
         this.notifyStateChange();
-
         return {
           success: true,
           action: 'torch_on',
           current_state: true,
           message: 'Torch turned on successfully.',
-          executionTimeMs: Math.round(
-            performance.now() - start
-          ),
+          executionTimeMs: Math.round(performance.now() - start),
+        };
+      } else {
+        this.torch_off();
+        return {
+          success: false,
+          action: 'torch_on',
+          current_state: false,
+          message: 'Flashlight hardware is not available on this device camera.',
+          limitation: 'TORCH_HARDWARE_UNAVAILABLE',
+          executionTimeMs: Math.round(performance.now() - start),
         };
       }
-
-      this.torch_off();
-
-      return {
-        success: false,
-        action: 'torch_on',
-        current_state: false,
-        message:
-          'Flashlight hardware is not available on this device camera.',
-        limitation: 'TORCH_HARDWARE_UNAVAILABLE',
-        executionTimeMs: Math.round(
-          performance.now() - start
-        ),
-      };
-
     } catch (err: any) {
       this.torch_off();
-
       return {
         success: false,
         action: 'torch_on',
         current_state: false,
-        message: `Could not turn on torch: ${
-          err.message || 'Permission denied or unsupported'
-        }`,
+        message: `Could not turn on torch: ${err.message || 'Permission denied or unsupported'}`,
         error: err.message,
-        executionTimeMs: Math.round(
-          performance.now() - start
-        ),
+        executionTimeMs: Math.round(performance.now() - start),
       };
     }
   }
 
-  public async torch_off(): Promise<SystemControlResult> {
+  public torch_off(): SystemControlResult {
     const start = performance.now();
-
-    // REAL native Android flashlight
-    if (MyraaDevice.isNativeAndroid()) {
-      const result = await MyraaDevice.turnTorchOff();
-
-      this.isTorchActive = result.enabled;
-
-      if (result.success) {
-        this.notifyStateChange();
-      }
-
-      return {
-        success: result.success,
-        action: 'torch_off',
-        current_state: result.enabled,
-        message: result.success
-          ? 'Torch turned off.'
-          : 'Could not turn off the Android flashlight.',
-        error: result.success
-          ? undefined
-          : 'NATIVE_TORCH_FAILED',
-        executionTimeMs: Math.round(
-          performance.now() - start
-        ),
-      };
-    }
-
-    // Browser / Render fallback
     try {
       if (this.torchTrack) {
         try {
@@ -863,32 +387,22 @@ export class SystemControlManager {
             advanced: [{ torch: false }],
           });
         } catch (e) {}
-
         this.torchTrack.stop();
         this.torchTrack = null;
       }
-
       if (this.torchMediaStream) {
-        this.torchMediaStream
-          .getTracks()
-          .forEach((t) => t.stop());
-
+        this.torchMediaStream.getTracks().forEach((t) => t.stop());
         this.torchMediaStream = null;
       }
-
       this.isTorchActive = false;
       this.notifyStateChange();
-
       return {
         success: true,
         action: 'torch_off',
         current_state: false,
         message: 'Torch turned off.',
-        executionTimeMs: Math.round(
-          performance.now() - start
-        ),
+        executionTimeMs: Math.round(performance.now() - start),
       };
-
     } catch (err: any) {
       return {
         success: false,
@@ -896,52 +410,17 @@ export class SystemControlManager {
         current_state: false,
         message: `Error turning off torch: ${err.message}`,
         error: err.message,
-        executionTimeMs: Math.round(
-          performance.now() - start
-        ),
+        executionTimeMs: Math.round(performance.now() - start),
       };
     }
   }
 
   public async torch_toggle(): Promise<SystemControlResult> {
-
-    // Native Android
-    if (MyraaDevice.isNativeAndroid()) {
-      const start = performance.now();
-
-      const result =
-        await MyraaDevice.toggleTorch();
-
-      this.isTorchActive = result.enabled;
-
-      if (result.success) {
-        this.notifyStateChange();
-      }
-
-      return {
-        success: result.success,
-        action: 'torch_toggle',
-        current_state: result.enabled,
-        message: result.success
-          ? result.enabled
-            ? 'Torch turned on successfully.'
-            : 'Torch turned off.'
-          : 'Could not toggle the Android flashlight.',
-        error: result.success
-          ? undefined
-          : 'NATIVE_TORCH_FAILED',
-        executionTimeMs: Math.round(
-          performance.now() - start
-        ),
-      };
-    }
-
-    // Browser fallback
     if (this.isTorchActive) {
       return this.torch_off();
+    } else {
+      return this.torch_on();
     }
-
-    return this.torch_on();
   }
 
   // =========================================================================
