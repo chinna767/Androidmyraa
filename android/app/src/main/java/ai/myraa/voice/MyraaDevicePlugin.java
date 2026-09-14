@@ -14,7 +14,7 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.getcapacitor.annotation.PluginMethod;
+import com.getcapacitor.PluginMethod;
 
 @CapacitorPlugin(name = "MyraaDevice")
 public class MyraaDevicePlugin extends Plugin {
